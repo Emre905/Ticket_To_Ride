@@ -13,9 +13,8 @@ You can check details of the game [here](https://cdn.1j1ju.com/medias/2c/f9/7f-t
 ![275](/plots/score_275.png)
 
 > [!NOTE]
-> It is not guaranteed that this is the highest score possible. The first algorithm test_combinations() I made, found me 232 points. But this algorithm depends on the order of Destination Tickets. This motivated
-me to define test_combinations_shuffle() which gave me all other crazy looking scores comparing to 232.
-Considering the fact that finding scores 270-275 is relatively easy with this new function (finds 1-2 each minute) and all of these found new scores were just rearrangements of the Destination Ticket orders, we can say that all found solutions for 270,272,273,274,275 are unique. And it's not very likely that there's a higher point
+> It is not guaranteed that this is the highest score possible. The first algorithm test_combinations() I made, found me 232 points. But this algorithm highly depends on the order of Destination Tickets. This motivated me to define test_combinations_shuffle() which gave me other much higher scores comparing to 232.
+Considering the fact that finding scores 270-275 is relatively easy with this new function (finds 1-2 each minute) and since all of these found new scores were just rearrangements of the Destination Ticket orders, we can say that all found solutions for 270,272,273,274,275 are unique. And it's not very likely that there's a higher point
 
 ## Which kind of scores wasn't included
 - Since this version is only for single-player, no longest train point (10 points)
