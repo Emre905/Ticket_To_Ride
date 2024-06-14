@@ -102,7 +102,8 @@ def _remove_nonterminal_leaves(G, terminals):
 # for brute force testing all possible routes
 def brute_force(n):
     max_score = 100
-    for ticket_amount in range(n,n+3): # should be (n,n+6) or (n,n+7) for n = 12
+    for ticket_amount in range(n+4,n+5): # should be (n,n+6) or (n,n+7) for n = 12
+        start = time()
         idx_list = combinations(range(30),ticket_amount)
         for idx in idx_list: # idx_list is a generator. need to iterate it for each term
             city_list = [TICKETS[i][j] for i in idx for j in range(2)] # add city1 and city2   
@@ -130,5 +131,4 @@ def brute_force(n):
                     best_idx = list(idx)
         print(f'best {ticket_amount} ticket paths are achieved at {best_idx} giving {max_score} points with {weight} trains {time()-start:.2f} sec')
     return max_score, weight, best_idx
-start = time()
 max_score, weight, best_idx = brute_force(2)
