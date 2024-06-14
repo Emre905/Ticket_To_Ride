@@ -17,7 +17,7 @@ You can check details of the game [here](https://cdn.1j1ju.com/medias/2c/f9/7f-t
 Considering the fact that finding scores 270-275 is relatively easy with this new function (finds 1-2 each minute) and since all of these found new scores were just rearrangements of the Destination Ticket orders, we can say that all found solutions for 270,272,273,274,275 are unique. And it's not very likely that there's a higher point
 
 ## Which kind of scores wasn't included
-- Since this version is only for single-player, no longest train point (10 points)
+- Since this version is only for single-player, no longest train point is added (10 points)
 - In the end of the game using some trains (without a Destination Ticket) just to get some extra points (this will not affect our score since all found high scores had 45 trains)
 
 ## Other high scores 270-274
