@@ -41,5 +41,5 @@ Considering the fact that finding scores 270-275 is relatively easy with this ne
 
 **The text on top:** Selected Destination Tickets with corresponding points
 
-### Thanks to
+## Thanks to
 [Rob217](https://github.com/Rob217/TicketToRideAnalysis) for gathering all the .txt files and city_locations.json file I've used in my code.
