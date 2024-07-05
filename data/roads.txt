@@ -1,101 +1,101 @@
 City A,City B,Distance,Color
-Vancouver,Calgary,3,X
-Vancouver,Seattle,1,X
-Vancouver,Seattle,1,X
-Seattle,Calgary,4,X
-Seattle,Helena,6,Y
-Seattle,Portland,1,X
-Seattle,Portland,1,X
-Portland,Salt Lake City,6,B
-Portland,San Francisco,5,G
-Portland,San Francisco,5,P
-San Francisco,Salt Lake City,5,O
-San Francisco,Salt Lake City,5,W
-San Francisco,Los Angeles,3,Y
-San Francisco,Los Angeles,3,P
-Los Angeles,Las Vegas,2,X
-Los Angeles,Phoenix,3,X
-Los Angeles,El Paso,6,K
-Calgary,Winnipeg,6,W
-Calgary,Helena,4,X
-Helena,Winnipeg,4,B
-Helena,Salt Lake City,3,P
-Helena,Denver,4,G
-Helena,Duluth,6,O
-Helena,Omaha,5,R
-Salt Lake City,Denver,3,R
-Salt Lake City,Denver,3,Y
-Las Vegas,Salt Lake City,3,O
-Phoenix,Denver,5,W
-Phoenix,Santa Fe,3,X
-Phoenix,El Paso,3,X
-Winnipeg,Sault St. Marie,6,X
-Winnipeg,Duluth,4,K
-Duluth,Sault St. Marie,3,X
-Duluth,Toronto,6,P
-Duluth,Chicago,3,R
-Duluth,Omaha,2,X
-Duluth,Omaha,2,X
-Omaha,Chicago,4,B
-Omaha,Kansas City,1,X
-Omaha,Kansas City,1,X
-Kansas City,Saint Louis,2,B
-Kansas City,Saint Louis,2,P
-Kansas City,Oklahoma City,2,X
-Kansas City,Oklahoma City,2,X
-Oklahoma City,Little Rock,2,X
-Oklahoma City,Dallas,2,X
-Oklahoma City,Dallas,2,X
-Dallas,Little Rock,2,X
-Dallas,Houston,1,X
-Dallas,Houston,1,X
-Houston,New Orleans,2,X
-El Paso,Houston,6,G
-El Paso,Dallas,4,R
-El Paso,Oklahoma City,5,Y
-El Paso,Santa Fe,2,X
-Santa Fe,Oklahoma City,3,B
-Oklahoma City,Denver,4,R
-Santa Fe,Denver,2,X
-Denver,Kansas City,4,K
-Denver,Kansas City,4,O
-Denver,Omaha,4,P
-New Orleans,Miami,6,R
-New Orleans,Atlanta,4,O
-New Orleans,Atlanta,4,Y
-New Orleans,Little Rock,3,G
-Little Rock,Nashville,3,W
-Little Rock,Saint Louis,2,X
-Saint Louis,Nashville,2,X
-Saint Louis,Pittsburgh,5,G
-Saint Louis,Chicago,2,G
-Saint Louis,Chicago,2,W
-Chicago,Pittsburgh,3,K
-Chicago,Pittsburgh,3,O
-Chicago,Toronto,4,W
-Sault St. Marie,Montreal,5,K
-Toronto,Montreal,3,X
-Sault St. Marie,Toronto,2,X
-Toronto,Pittsburgh,2,X
-Pittsburgh,New York,2,W
-Pittsburgh,New York,2,G
-Pittsburgh,Washington,2,X
-Pittsburgh,Raleigh,2,X
-Nashville,Raleigh,3,K
-Nashville,Atlanta,1,X
-Nashville,Pittsburgh,4,Y
-Atlanta,Miami,5,B
-Atlanta,Charleston,2,X
-Atlanta,Raleigh,2,X
-Atlanta,Raleigh,2,X
-Charleston,Miami,4,P
-Raleigh,Charleston,2,X
-Raleigh,Washington,2,X
-Raleigh,Washington,2,X
-Washington,New York,2,O
-Washington,New York,2,K
-New York,Boston,2,Y
-New York,Boston,2,R
-New York,Montreal,3,B
-Boston,Montreal,2,X
-Boston,Montreal,2,X
+Vancouver,Calgary,3,NONE
+Vancouver,Seattle,1,NONE
+Vancouver,Seattle,1,NONE
+Seattle,Calgary,4,NONE
+Seattle,Helena,6,YELLOW
+Seattle,Portland,1,NONE
+Seattle,Portland,1,NONE
+Portland,Salt Lake City,6,BLUE
+Portland,San Francisco,5,GREEN
+Portland,San Francisco,5,PURPLE
+San Francisco,Salt Lake City,5,ORANGE
+San Francisco,Salt Lake City,5,WHITE
+San Francisco,Los Angeles,3,YELLOW
+San Francisco,Los Angeles,3,PURPLE
+Los Angeles,Las Vegas,2,NONE
+Los Angeles,Phoenix,3,NONE
+Los Angeles,El Paso,6,BLACK
+Calgary,Winnipeg,6,WHITE
+Calgary,Helena,4,NONE
+Helena,Winnipeg,4,BLUE
+Helena,Salt Lake City,3,PURPLE
+Helena,Denver,4,GREEN
+Helena,Duluth,6,ORANGE
+Helena,Omaha,5,RED
+Salt Lake City,Denver,3,RED
+Salt Lake City,Denver,3,YELLOW
+Las Vegas,Salt Lake City,3,ORANGE
+Phoenix,Denver,5,WHITE
+Phoenix,Santa Fe,3,NONE
+Phoenix,El Paso,3,NONE
+Winnipeg,Sault St. Marie,6,NONE
+Winnipeg,Duluth,4,BLACK
+Duluth,Sault St. Marie,3,NONE
+Duluth,Toronto,6,PURPLE
+Duluth,Chicago,3,RED
+Duluth,Omaha,2,NONE
+Duluth,Omaha,2,NONE
+Omaha,Chicago,4,BLUE
+Omaha,Kansas City,1,NONE
+Omaha,Kansas City,1,NONE
+Kansas City,Saint Louis,2,BLUE
+Kansas City,Saint Louis,2,PURPLE
+Kansas City,Oklahoma City,2,NONE
+Kansas City,Oklahoma City,2,NONE
+Oklahoma City,Little Rock,2,NONE
+Oklahoma City,Dallas,2,NONE
+Oklahoma City,Dallas,2,NONE
+Dallas,Little Rock,2,NONE
+Dallas,Houston,1,NONE
+Dallas,Houston,1,NONE
+Houston,New Orleans,2,NONE
+El Paso,Houston,6,GREEN
+El Paso,Dallas,4,RED
+El Paso,Oklahoma City,5,YELLOW
+El Paso,Santa Fe,2,NONE
+Santa Fe,Oklahoma City,3,BLUE
+Oklahoma City,Denver,4,RED
+Santa Fe,Denver,2,NONE
+Denver,Kansas City,4,BLACK
+Denver,Kansas City,4,ORANGE
+Denver,Omaha,4,PURPLE
+New Orleans,Miami,6,RED
+New Orleans,Atlanta,4,ORANGE
+New Orleans,Atlanta,4,YELLOW
+New Orleans,Little Rock,3,GREEN
+Little Rock,Nashville,3,WHITE
+Little Rock,Saint Louis,2,NONE
+Saint Louis,Nashville,2,NONE
+Saint Louis,Pittsburgh,5,GREEN
+Saint Louis,Chicago,2,GREEN
+Saint Louis,Chicago,2,WHITE
+Chicago,Pittsburgh,3,BLACK
+Chicago,Pittsburgh,3,ORANGE
+Chicago,Toronto,4,WHITE
+Sault St. Marie,Montreal,5,BLACK
+Toronto,Montreal,3,NONE
+Sault St. Marie,Toronto,2,NONE
+Toronto,Pittsburgh,2,NONE
+Pittsburgh,New York,2,WHITE
+Pittsburgh,New York,2,GREEN
+Pittsburgh,Washington,2,NONE
+Pittsburgh,Raleigh,2,NONE
+Nashville,Raleigh,3,BLACK
+Nashville,Atlanta,1,NONE
+Nashville,Pittsburgh,4,YELLOW
+Atlanta,Miami,5,BLUE
+Atlanta,Charleston,2,NONE
+Atlanta,Raleigh,2,NONE
+Atlanta,Raleigh,2,NONE
+Charleston,Miami,4,PURPLE
+Raleigh,Charleston,2,NONE
+Raleigh,Washington,2,NONE
+Raleigh,Washington,2,NONE
+Washington,New York,2,ORANGE
+Washington,New York,2,BLACK
+New York,Boston,2,YELLOW
+New York,Boston,2,RED
+New York,Montreal,3,BLUE
+Boston,Montreal,2,NONE
+Boston,Montreal,2,NONE
