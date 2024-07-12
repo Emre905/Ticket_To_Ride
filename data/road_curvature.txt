@@ -33,7 +33,7 @@ Winnipeg,Sault St. Marie,0
 Winnipeg,Duluth,0
 Duluth,Sault St. Marie,0
 Duluth,Toronto,0
-Duluth,Chicago,0
+Duluth,Chicago,0.1
 Duluth,Omaha,0
 Duluth,Omaha,0
 Omaha,Chicago,-0.3
