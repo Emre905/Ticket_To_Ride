@@ -1,26 +1,22 @@
 # Create turn based Ticket to Ride game for 2 players 
 import sys 
-import networkx as nx 
-import numpy as np 
 import random
 from collections import deque
 import time
-from functions import VERTICES, EDGES, TICKETS, EDGES_DICT, POINT_EDGE_DICT, G, CITY_LOCATIONS
+from functions import TICKETS, G
 import functions as func
 from Ui_windows.Ui_mainwindow import Ui_MainWindow 
 from Ui_windows.Ui_widget_game_board import Ui_Form_Game_Board
 from PyQt5 import QtCore
-from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget
+from PyQt5.QtWidgets import QApplication, QMainWindow, QWidget, QMessageBox
 
 
 ''' 
 Too add: 
-- Define a player's turn. its possible to select a ticket after selecting one card etc
-- longest road point to functions.calculate_point()
-- stations to functions
+- player2 select ticket screen 
 
 Issues:
-1- set_ok_cancel_buttons() doesn't connect buttons to functions
+1-
 
 rules were taken from https://www.ultraboardgames.com/ticket-to-ride/game-rules.php
 number of cards were taken from https://boardgamegeek.com/wiki/page/Ticket_to_Ride_series
@@ -28,6 +24,10 @@ number of cards were taken from https://boardgamegeek.com/wiki/page/Ticket_to_Ri
 - 96 Train Cards (12 each in Red, Orange, Yellow, Green, Blue, Purple, Black & White)
 - 14 Locomotive Wild Cards (Multicolored)
 But I decided to make it all 14
+
+User Guide:
+To claim a road, select 2 cities connecting the road. Make sure no other city is selected. 
+You can deselect a city by clicking on it again. 
 '''
 
 # set first game state
@@ -52,17 +52,19 @@ class Game:
         self.ticket_cards_player2 : list = [] # ticket cards player 2 has
         self.displayed_cards : list = [] # 5 cards that player selects train cards
         self.discarded_cards : deque = deque() # used cards goes to discarded pile
-        self.taken_routes_player1 : list = [] # selected destination tickets by player1
-        self.taken_routes_player2 : list = [] # selected destination tickets by player2
+        self.taken_routes_player1 : dict = dict() # taken roads (routes) by player1
+        self.taken_routes_player2 : dict = dict() # taken roads (routes) by player2
         self.trains_player1 : int = 45
         self.trains_player2 : int = 45
         self.player1_train_draw_count : int = 0 # will be 0, 1 or 2. number of cards player drew
+        self.player2_train_draw_count : int = 0
         self.select_ticket_bool : bool = True # if player can select ticket now
-        self.player = 'player1' # current player who has right to play
-        self.round_count = 0 # which round it is
-        self.GRAPH = G # get networkx graph
+        self.player = random.choice(['player1', 'player2']) # get first player who will start the game
+        self.round_count = 0 # will increase each time a player plays. for 2 person real round_count = floor(self.round_count/2)+1
         self.selected_nodes : list = [] # will be the nodes player selects when he tries to claim a road
         self.select_color_bool = False
+        self.player_drew_train_card = False # bool will be true when a player selects a train card (to avoid claiming a road or select ticket afterwards)
+        self.GRAPH = G
         self.run()
     
     # deal cards in the beginning of the game
@@ -72,7 +74,7 @@ class Game:
             self.train_cards_player2.append(self.train_cards.popleft()) # deal (new) top card to player 2
 
     # select cards to be displayed
-    def display_train_cards(self) -> None:
+    def display_train_cards(self, card_idx = -1) -> None:
         try: 
             if not self.displayed_cards: # if there are no displayed cards, reveal 5 cards
                 while True:
@@ -87,13 +89,14 @@ class Game:
                     else:
                         break
 
-            # this part will be used each time a player drew a card from displayerd cards. reveal top card and check for 3 rainbows
+            # this part will be used each time a player drew a card from displayed cards. reveal top card and check for 3 rainbows
             else:
                 top_card = self.train_cards.popleft() 
-                self.displayed_cards.append(top_card) # remove top card and append to displayed cards
+                self.displayed_cards.insert(card_idx, top_card) # remove top card and append to displayed cards
                 
                 rainbow_count = self.displayed_cards.count('rainbow')
-                if rainbow_count >= 3:
+                if rainbow_count >= 3: # if there are 3 rainbow cards, discard all displayed cards
+                    main_win.display_message("3 RAINBOWS SPOTTED! RESETTING CARDS", 1)
                     self.discarded_cards.extend(self.displayed_cards) # add discarded cards to list
                     self.displayed_cards : list = []
                     self.display_train_cards()
@@ -120,15 +123,7 @@ class Game:
             self.train_cards_player2.append(self.displayed_cards[card_index])
 
         self.displayed_cards.remove(self.displayed_cards[card_index]) # remove selected cards from display
-
-        try:
-            top_card = self.train_cards.popleft() # get the top card
-            self.displayed_cards.insert(card_index, top_card) # remove top card and append to displayed cards
-
-        except IndexError: # when the train_cards is empty, pop will raise IndexError.
-            self.reset_train_cards() # reset draw deck
-            top_card = self.train_cards.popleft()
-            self.displayed_cards.insert(card_index, top_card)
+        self.display_train_cards(card_index)
 
     # draw a card from pile    
     def draw_train_card_random(self, player):
@@ -152,10 +147,11 @@ class Game:
         self.discarded_cards : deque = deque([]) # reset discarded cards (they're back in the game)
 
     def get_next_player(self, player):
-        # self.player = "player2" if player == "player1" else "player1"
-        self.player = "player1" # test mode
-        if player == "player1": # if it's 2nd player, increase round count
-            self.round_count += 1 
+        self.player = "player2" if player == "player1" else "player1"
+        # self.player = "player1" # test mode
+        self.round_count += 1 
+        
+        main_win.display_message(f'{self.player.upper()}\'s turn')
 
     def deal_first_round(self) -> None:
         self.deal_train_cards() # deal 4 train cards to players in the beginning
@@ -180,6 +176,7 @@ class MainWindow(QMainWindow):
 
         self.ui.button_instructions.clicked.connect(self.show_instructions)
         self.ui.button_play.clicked.connect(self.initUI)
+        self.ui.button_play_instructions.clicked.connect(self.initUI)
 
 
     def show_instructions(self):
@@ -195,14 +192,14 @@ class MainWindow(QMainWindow):
         # Initialize the game board UI within this container
         self.boardWidget.setupUi(self.boardWidgetContainer, 
                                 game.player, 
-                                game.train_cards_player1, 
-                                game.ticket_cards_player1,
+                                (game.train_cards_player1, game.train_cards_player2), 
+                                (game.ticket_cards_player1, game.ticket_cards_player2),
                                 game.displayed_cards,
                                 game.ticket_options_player1,
                                 game.select_ticket_bool,
                                 len(game.train_cards),
-                                game.GRAPH,
-                                game.taken_routes_player1)
+                                (game.taken_routes_player1, game.taken_routes_player2),
+                                (game.trains_player1, game.trains_player2))
                                 
         
         # Add the game board container to the stacked widget
@@ -212,9 +209,9 @@ class MainWindow(QMainWindow):
         self.ui.stackedWidget.setCurrentWidget(self.boardWidgetContainer)
 
         if game.round_count == 0: #display ticket selection at first round
-            self.boardWidget.stackedWidget.setCurrentWidget(self.boardWidget.state_select_ticket)
+            self.boardWidget.stackedwidget_select_ticket.setCurrentWidget(self.boardWidget.state_select_ticket)
         else:
-            self.boardWidget.stackedWidget.setCurrentWidget(self.boardWidget.state_game)
+            self.boardWidget.stackedwidget_select_ticket.setCurrentWidget(self.boardWidget.state_game)
 
         # at ticket select state check which buttons are pressed when ok button is hit
         self.boardWidget.button_ticket_option_okay.clicked.connect(self.button_ticket_draw_listener)
@@ -227,42 +224,94 @@ class MainWindow(QMainWindow):
         self.boardWidget.button_draw5.clicked.connect(lambda: self.draw_train_card(game.player, 4))
         self.boardWidget.button_draw_train.clicked.connect(lambda: self.draw_train_card_random(game.player))
 
+        # activate city nodes
         for node in self.boardWidget.button_map:
             self.boardWidget.button_map[node].toggled.connect(lambda checked, node=node: self.city_button_clicked(checked, node))
 
         # set actions to pressing draw (destination) tickets button
         self.boardWidget.button_draw_destination.clicked.connect(lambda: self.deal_ticket_cards_to_player(game.player))
 
-        
+        if game.round_count == 10000: # was put to count last 2 rounds easier when a player runs out of trains
+            self.calculate_scores()
+
+    def keyPressEvent(self, event):
+        if event.key() == QtCore.Qt.Key_Escape:
+            buttonReply = QMessageBox.question(self, 'Information', 
+                                               "To claim a road, select 2 cities connecting the road. Make sure no other city is selected.\n" 
+                                               "You can deselect a city by clicking on it again. ", 
+                                               QMessageBox.Ok | QMessageBox.No, QMessageBox.No)
+            if buttonReply == QMessageBox.No:
+                QMessageBox.information(self, 'Information', "You don't have such option. Good luck")
+
+        elif event.key() == QtCore.Qt.Key_B or event.key() == QtCore.Qt.Key_C: # undo operation (cancel)
+            # if its question or confirm state, cancel it
+            if self.boardWidget.state_claim_road_question.isVisible() or self.boardWidget.state_claim_road_confirm.isVisible():
+                game.selected_nodes = [] # reset selected nodes
+                self.initUI() # reset board
+
+        elif event.key() == QtCore.Qt.Key_Return or event.key() == QtCore.Qt.Key_Enter:
+            # if its confirm state, accept the offer
+            if self.boardWidget.state_claim_road_confirm.isVisible():
+                self.display_message("TAKING ROUTE ...")
+                # taking road
+                self.take_road(game.player, self.color, self.cost, self.node1, self.node2) # take selected road
+                self.initUI()
+                
+        elif event.key() == QtCore.Qt.Key_A:
+            self.display_message("pressed A")
+
 
     def deal_ticket_cards_to_player(self, player):
-        if player == 'player1':
-            game.ticket_options_player1 = []
-            # deal top 3 cards to player
-            for i in range(3):
-                game.ticket_options_player1.append(game.destination_tickets.popleft()) # deal top card to player 1
-        
-        else: # if player2
-            game.ticket_options_player2 = []
-            # deal top 3 cards to player
-            for i in range(3):
-                game.ticket_options_player2.append(game.destination_tickets.popleft()) # deal top card to player 2
+        if game.player_drew_train_card: # if player drew a card already, block selecting cities
+            self.display_message("YOU CAN ONLY DRAW ANOTHER CARD")
 
-        self.initUI() #update board        
-        self.boardWidget.stackedWidget.setCurrentWidget(self.boardWidget.state_select_ticket) # set ticket select state
-        self.button_ticket_draw_listener() # set actions to buttons
+        else:
+            if player == 'player1':
+                game.ticket_options_player1 = []
+                # deal top 3 cards to player
+                for i in range(3):
+                    game.ticket_options_player1.append(game.destination_tickets.popleft()) # deal top card to player 1
+            
+                self.initUI() #update board        
+                self.boardWidget.stackedwidget_select_ticket.setCurrentWidget(self.boardWidget.state_select_ticket) # set ticket select state
+                if game.round_count > 0:
+                    self.boardWidget.label_state_select_ticket.setText("SELECT AT LEAST 1 TICKETS")
+                self.button_ticket_draw_listener() # set actions to buttons
+
+            else: # if player2
+                game.ticket_options_player2 = []
+                # deal top 3 cards to player
+                for i in range(3):
+                    game.ticket_options_player2.append(game.destination_tickets.popleft()) # deal top card to player 2
+
 
     def city_button_clicked(self, checked, node):
+        if game.player_drew_train_card: # if player drew a card already, block selecting cities
+            self.display_message("YOU CAN ONLY DRAW ANOTHER CARD")
+            self.boardWidget.button_map[node].setChecked(False) # uncheck node
+            return
+
         if checked: # button is selected
             game.selected_nodes.append(node) # add node
 
         else: # button is deselected
             game.selected_nodes.remove(node) # remove node
+            self.boardWidget.stackedWidget_claim_road.setCurrentWidget(self.boardWidget.state_claim_road_empty) # go back to board
 
         # if 2 nodes are selected, check for the road
         if len(game.selected_nodes) == 2: # 2 nodes are selected
-            # get if last 2 selected nodes are neighbors
-            self.node1, self.node2 = game.selected_nodes[0], game.selected_nodes[1]
+            # get last 2 selected nodes in alphabetical order
+            self.node1, self.node2 = min(game.selected_nodes), max(game.selected_nodes)
+
+            # check if the road is already taken
+            if ((self.node1, self.node2) in game.taken_routes_player1.keys() or 
+                (self.node1, self.node2) in game.taken_routes_player2.keys()):
+                self.display_message("ROAD IS ALREADY TAKEN", 1) # unselect nodes
+                self.boardWidget.button_map[self.node1].setChecked(False) #uncheck nodes
+                self.boardWidget.button_map[self.node2].setChecked(False)
+                # self.initUI() # reset board  (still enters into the same code and raises indexerror from game.selected_nodes[-2])
+                return
+
             adjaceny_list = [(u, v, k, d) for u, v, k, d in game.GRAPH.edges(self.node1, keys=True, data=True) if v == self.node2]
             road_count = len(adjaceny_list) # number of edges(roads) between selected 2 nodes(cities)  
 
@@ -270,7 +319,8 @@ class MainWindow(QMainWindow):
                 self.boardWidget.stackedWidget_claim_road.setCurrentWidget(self.boardWidget.state_claim_road_question) # get question state
                 # set question text 
                 self.boardWidget.textEdit_claim_road_question_select_cities.setText(
-                    f"SELECTING {game.selected_nodes[-2].upper()}-{game.selected_nodes[-1].upper()}")
+                    f"SELECTING {game.selected_nodes[-2].upper()}-{game.selected_nodes[-1].upper()}\n"
+                     "PRESS B OR C TO CANCEL, OR DESELECT NODES BY CLICKING AGAIN")
 
                 if road_count == 2: # if there are 2 parallel roads, give 2 options (1 for each color)
                     colors = [i[3]['color'] for i in adjaceny_list]
@@ -300,21 +350,30 @@ class MainWindow(QMainWindow):
                         self.set_train_card_buttons(weight) #set actions for color buttons
                     else:
                         self.select_color(color, weight)
+            
+            else: # 2 cities selected but there's no route connecting them
+                self.display_message(f"{self.node1} and {self.node2} aren't neighbors", 1)
 
     def select_color(self, color, weight):
         # check if player has enough cards
-        card_count = game.train_cards_player1.count(color.lower())
-        rainbow_count = game.train_cards_player1.count("rainbow")
+        if game.player == 'player1':
+            card_count = game.train_cards_player1.count(color.lower())
+            rainbow_count = game.train_cards_player1.count("rainbow")
+        else:
+            card_count = game.train_cards_player2.count(color.lower())
+            rainbow_count = game.train_cards_player2.count("rainbow")
 
         if weight <= card_count:
-            select_color_text = f"COST: {weight} {color} CARDS \nYOU CAN SELECT ANOTHER COLOR IF YOU'D LIKE TO"
+            select_color_text = (f"COST: {weight} {color.upper()} CARDS \nYOU CAN SELECT ANOTHER COLOR IF YOU'D LIKE TO\n"
+                                    "PRESS ENTER TO CONTINUE... PRESS B OR C TO CANCEL")
             select_color_bool = True
-            cost = [card_count, 0] # cost of colored card + rainbow card
+            cost = [weight, 0] # cost of colored card + rainbow card
         
         # check if player can compensate with rainbow cards
         elif weight <= card_count + rainbow_count:
-            select_color_text = (f"COST: {weight} CARDS ({card_count} {color} + {weight - card_count} RAINBOW)\n"
-                                    "YOU CAN SELECT ANOTHER COLOR IF YOU'D LIKE TO")
+            select_color_text = (f"COST: {weight} CARDS ({card_count} {color.upper()} + {weight - card_count} RAINBOW)\n"
+                                    "YOU CAN SELECT ANOTHER COLOR IF YOU'D LIKE TO\n"
+                                    "PRESS ENTER TO CONTINUE... PRESS B OR C TO CANCEL")
             select_color_bool = True
             cost = [card_count, weight - card_count] # cost of colored card + rainbow card
 
@@ -322,6 +381,11 @@ class MainWindow(QMainWindow):
         else:
             select_color_text = "YOU DON'T HAVE ENOUGH CARDS \nSELECT ANOTHER COLOR!"
             select_color_bool = False
+            cost = 31 # test
+
+        # set as new variables to call self.take_road() from another function
+        self.color = color
+        self.cost = cost
 
         # if player selected a valid color
         if select_color_bool:
@@ -329,13 +393,10 @@ class MainWindow(QMainWindow):
             self.boardWidget.label_claim_road_cost.setText(select_color_text)
             self.boardWidget.stackedWidget_claim_road.setCurrentWidget(self.boardWidget.state_claim_road_confirm)
 
-            # self.set_ok_cancel_buttons(color, cost) # doesnt work !! so I had to skip this part for now
-
-            self.take_road("player1", color, cost, self.node1, self.node2) # take selected road
-            self.initUI()
         else:
-            self.boardWidget.label_claim_road_cost.setText(select_color_text)
-            self.boardWidget.stackedWidget_claim_road.setCurrentWidget(self.boardWidget.state_claim_road_confirm)
+            # if it's not a valid color display message
+            self.boardWidget.label_claim_road_cost_reject.setText(select_color_text)
+            self.boardWidget.stackedWidget_claim_road.setCurrentWidget(self.boardWidget.state_claim_road_reject)
 
     def take_road(self, player, color, cost, node1, node2):
         if player == 'player1':
@@ -346,6 +407,12 @@ class MainWindow(QMainWindow):
                 game.discarded_cards.append('RAINBOW'.lower()) # discard rainbow cards
                 game.train_cards_player1.remove('RAINBOW'.lower()) # remove from user cards
             game.trains_player1 -= cost[0] + cost[1] # spend trains
+            game.taken_routes_player1.update({(node1, node2) : (cost[0] + cost[1], color)}) # take selected road
+
+            if game.trains_player1 < 3 and game.round_count < 9997: #enter last 2 rounds
+                self.display_message(f'PLAYER1 HAS {game.trains_player1} TRAINS. LAST ROUND OF THE GAME!', 3)
+                game.round_count = 9997
+
         else:
             for i in range(cost[0]):
                 game.discarded_cards.append(color.lower()) # discard selected color cards
@@ -354,11 +421,14 @@ class MainWindow(QMainWindow):
                 game.discarded_cards.append('RAINBOW'.lower()) # discard rainbow cards
                 game.train_cards_player2.remove('RAINBOW'.lower()) # remove from user cards
             game.trains_player2 -= cost[0] + cost[1] # spend trains
+            game.taken_routes_player2.update({(node1, node2) : (cost[0] + cost[1], color)}) # take selected road
 
-        game.taken_routes_player1.append((node1, node2, str(cost[0]+cost[1]), color)) # take selected road
+            if game.trains_player2 < 3 and game.round_count < 9997: # enter last 2 rounds
+                self.display_message(f'PLAYER2 HAS {game.trains_player2} TRAINS. LAST ROUND OF THE GAME!', 3)
+                game.round_count = 9997
+
         game.selected_nodes = [] #reset selected nodes
 
-        self.display_warning('player2\'s turn')
         game.get_next_player(player)
 
     def draw_train_card(self, player, card_index):
@@ -369,22 +439,39 @@ class MainWindow(QMainWindow):
                     game.get_next_player(player) # skip player's turn
                     game.player1_train_draw_count = 0 # reset count for player1
                     self.initUI() # update board
-                    self.display_warning('player2\'s turn') 
 
                 elif game.displayed_cards[card_index] != 'rainbow':
                     game.draw_train_card(player, card_index) # draw card 
                     game.player1_train_draw_count += 1 # increase count
-                    self.initUI() # update board
+                    game.player_drew_train_card = True # make bool true to force player to draw card again
                     if game.player1_train_draw_count == 2: # if it was 2nd draw skip players turn
                         game.player1_train_draw_count = 0 # reset count for player1
+                        game.player_drew_train_card = False # reset bool
                         game.get_next_player(player) # skip player's turn
-                        self.display_warning('player2\'s turn')
+                    self.initUI() # update board
                 else:
-                    self.display_warning("DON'T CHEAT, BRO") # display dont cheat warning
+                    self.display_message("DON'T CHEAT, BRO") # display dont cheat message
 
-        else:
-            self.display_warning("IT'S NOT YOUR TURN") # display dont cheat warning
-            # self.boardWidget.button_ticket_option1.setEnabled(False)
+        else: # this part normally should just be self.display_message("IT'S NOT YOUR TURN") # display dont cheat message
+            if game.player2_train_draw_count < 2: 
+                if game.displayed_cards[card_index] == 'rainbow' and game.player2_train_draw_count == 0:
+                    game.draw_train_card(player, card_index) # draw card
+                    game.get_next_player(player) # skip player's turn
+                    game.player2_train_draw_count = 0 # reset count for player2
+                    self.initUI() # update board
+
+                elif game.displayed_cards[card_index] != 'rainbow':
+                    game.draw_train_card(player, card_index) # draw card 
+                    game.player2_train_draw_count += 1 # increase count
+                    game.player_drew_train_card = True # make bool true to force player to draw card again
+                    if game.player2_train_draw_count == 2: # if it was 2nd draw skip players turn
+                        game.player2_train_draw_count = 0 # reset count for player2
+                        game.player_drew_train_card = False # reset bool
+                        game.get_next_player(player) # skip player's turn
+                    self.initUI() # update board
+
+                else:
+                    self.display_message("DON'T CHEAT, BRO") # display dont cheat message
 
         # add method for bot
         if player == 'player2':
@@ -395,24 +482,26 @@ class MainWindow(QMainWindow):
             if game.player1_train_draw_count < 2:
                 game.draw_train_card_random(player) # draw a random card
                 game.player1_train_draw_count += 1 # increase count
+                game.player_drew_train_card = True # make bool true to force player to draw card again
                 
-                if game.player1_train_draw_count == 2: # if it was 2nd draw skip players turn
+                if game.player1_train_draw_count == 2: # if it was 2nd draw, skip players turn
                     game.player1_train_draw_count = 0 # reset count for player1
+                    game.player_drew_train_card = False # reset bool
                     game.get_next_player(player) # skip player's turn
-                    self.display_warning('player2\'s turn')
-            else:
-                self.display_warning("DON'T CHEAT, BRO") # display dont cheat warning
-        
-            self.initUI() #display new board
-        
         else:
-            self.display_warning("IT'S NOT YOUR TURN", 0.2) # display dont cheat warning
+            if game.player2_train_draw_count < 2:
+                game.draw_train_card_random(player) # draw a random card
+                game.player2_train_draw_count += 1 # increase count
+                game.player_drew_train_card = True # make bool true to force player to draw card again
 
-        # add method for bot
-        if player == 'player2':
-            pass
+                if game.player2_train_draw_count == 2: # if it was 2nd draw, skip players turn
+                    game.player2_train_draw_count = 0 # reset count for player2
+                    game.player_drew_train_card = False # reset bool
+                    game.get_next_player(player) # skip player's turn
 
+        self.initUI() #display new board
 
+    # will be used only for real players. bot can simply call game.destination_tickets
     def button_ticket_draw_listener(self):
         button_1 = self.boardWidget.button_ticket_option1 # get name of each button (displays tickets)
         button_2 = self.boardWidget.button_ticket_option2
@@ -436,14 +525,13 @@ class MainWindow(QMainWindow):
 
             if game.round_count > 0: # skip player's turn if it wasn't first round
                 game.get_next_player(game.player)
+            else:
+                game.round_count += 1 
 
-            game.round_count += 1 
-
+            game.selected_nodes = [] #reset selected nodes
             self.initUI()
-            self.boardWidget.stackedWidget.setCurrentWidget(self.boardWidget.state_game)
-        
-        # add method for bot
-
+            self.boardWidget.stackedwidget_select_ticket.setCurrentWidget(self.boardWidget.state_game)
+    
 
     def set_train_card_buttons(self, weight, selected_colors = list('blue red green yellow black orange purple white'.upper().split())):
         # set actions of train buttons
@@ -458,31 +546,85 @@ class MainWindow(QMainWindow):
             "YELLOW": self.boardWidget.button_train_yellow,
         }
         
-        # Connect signals for selected colors
+        # set signals for selected colors
         for color in selected_colors:
             color_button_map[color].clicked.connect(lambda checked, color=color: self.select_color(color, weight))
-
-    # doesnt work yet
-    def set_ok_cancel_buttons(self, color, cost):
-        self.boardWidget.buttonBox_claim_road.accepted.connect(self.handle_accept)
-        self.boardWidget.buttonBox_claim_road.rejected.connect(lambda : self.take_road("player1", color, cost, self.node1, self.node2))
-
-
-    def display_warning(self, text, duration = 0.5):
-        self.boardWidget.dont_cheat_label.setText(text) # set text and background
-        self.boardWidget.dont_cheat_label.setStyleSheet("QLabel {background-color: white; color: black;}")
-        
-        self.boardWidget.dont_cheat_label.adjustSize() # adjust label size to match text size
-        
-        self.boardWidget.dont_cheat_label.setAlignment(QtCore.Qt.AlignCenter) # Center the label
     
-        self.boardWidget.dont_cheat_label.raise_() # raise label to the top
+    def calculate_scores(self):
+        # calculate points of player1 and player2
+        (point_ticket_p1, point_edge_p1, longest_path_length_p1, longest_path_edges_p1) = (
+    func.calculate_point(game.taken_routes_player1, game.ticket_cards_player1)
+)
+        (point_ticket_p2, point_edge_p2, longest_path_length_p2, longest_path_edges_p2) = (
+    func.calculate_point(game.taken_routes_player2, game.ticket_cards_player2)
+)
+        player1_point = point_ticket_p1 + point_edge_p1
+        player2_point = point_ticket_p2 + point_edge_p2
+
+        # add longest path point
+        if longest_path_edges_p1 > longest_path_edges_p2: # add longest road point to player1
+            player1_point += 10
+        elif longest_path_edges_p1 < longest_path_edges_p2: # add to player2
+            player2_point += 10
+        else: # add to both players
+            player1_point += 10
+            player2_point += 10
+
+        winner = 'player1' if player1_point > player2_point else 'player2' # decide winner
+        tie = True if player1_point == player2_point else False # decide if it's tie
+
+        # display winner
+        if tie:
+            QMessageBox.information(self, 'FINAL SCORE', 
+                                    f"PLAYER1: TICKETS:{point_ticket_p1}, TRAINS:{point_edge_p1}, LONGEST TRAIN: {longest_path_length_p1}\n"
+                                    f"PLAYER2: TICKETS:{point_ticket_p2}, TRAINS:{point_edge_p2}, LONGEST TRAIN: {longest_path_length_p2}\n\n"
+                                    f"PLAYER1'S POINT: {player1_point}\n"
+                                    f"PLAYER2'S POINT: {player2_point}\n"
+                                    f"GAME IS TIE"
+                                    "\n\nGAME WILL TURN OFF WHEN YOU CLOSE THIS MESSAGEBOX")
+
+        else:
+            QMessageBox.information(self, 'FINAL SCORE', 
+                                    f"PLAYER1: TICKETS:{point_ticket_p1}, TRAINS:{point_edge_p1}, LONGEST TRAIN: {longest_path_length_p1}\n"
+                                    f"PLAYER2: TICKETS:{point_ticket_p2}, TRAINS:{point_edge_p2}, LONGEST TRAIN: {longest_path_length_p2}\n\n"
+                                    f"PLAYER1'S POINT: {player1_point}\n"
+                                    f"PLAYER2'S POINT: {player2_point}\n"
+                                    f"WINNER IS {winner.upper()}"
+                                    "\n\nGAME WILL TURN OFF WHEN YOU CLOSE THIS MESSAGEBOX")
+        app.exit()
+        
+        
+
+    def display_message(self, text, duration = 0.5):
+        self.boardWidget.label_warn_user.setText(text) # set text and background
+        self.boardWidget.label_warn_user.setStyleSheet("QLabel {background-color: white; color: black;}")
+        
+        self.boardWidget.label_warn_user.adjustSize() # adjust label size to match text size
+
+        # Get dimensions of the parent widget (self.canvas)
+        parent_width = self.boardWidget.label_board.width()
+        parent_height = self.boardWidget.label_board.height()
+
+        # Get dimensions of the label
+        label_width = self.boardWidget.label_warn_user.width()
+        label_height = self.boardWidget.label_warn_user.height()
+
+        # Calculate position to center the label
+        x = (parent_width - label_width) // 2
+        y = (parent_height - label_height - 200) // 2
+
+        # Set the geometry of the label to center it
+        self.boardWidget.label_warn_user.setGeometry(x, y, label_width, label_height)
+        
+        self.boardWidget.label_warn_user.setAlignment(QtCore.Qt.AlignCenter) # Center the label
+    
+        self.boardWidget.label_warn_user.raise_() # raise label to the top
 
         # Show the label
-        self.boardWidget.dont_cheat_label.show() # display warning
-        self.boardWidget.dont_cheat_label.repaint() # update board
+        self.boardWidget.label_warn_user.show() # display message
+        self.boardWidget.label_warn_user.repaint() # update board
         time.sleep(duration) # wait for specified amount of seconds
-        self.boardWidget.dont_cheat_label.hide() # hide warning
+        self.boardWidget.label_warn_user.hide() # hide message
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

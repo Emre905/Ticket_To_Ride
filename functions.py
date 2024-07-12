@@ -1,18 +1,6 @@
 # define necessary functions taken from ticket_to_ride.ipynb
 import networkx as nx 
-import numpy as np 
 import json 
-import os 
-import random 
-from time import time 
-import matplotlib.pyplot as plt 
-import matplotlib.image as mpimg 
-from matplotlib.lines import Line2D
-from networkx.utils import pairwise 
-import sys
-from PyQt5.QtWidgets import QApplication, QVBoxLayout, QWidget
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.image import imread
 
 # Define necessary game variables
 
@@ -48,130 +36,81 @@ for edge in EDGES:
     G.add_edge(edge[0], edge[1], weight = int(edge[2]), color = edge[3]) #add edges
 
 
-'''
-Note: Had "no attribute" problems for nx.steiner_tree() function. It is copied 
-from the documentation, made some slight changes and removed unnecessary parts:
-'''
-
-def steiner_tree(G, terminal_nodes, weight="weight"):
-    method = "mehlhorn"
-    algo = _mehlhorn_steiner_tree
-
-    edges = algo(G, terminal_nodes, weight)
-    # For multigraph we should add the minimal weight edge keys
-    if G.is_multigraph():
-        edges = (
-            (u, v, min(G[u][v], key=lambda k: G[u][v][k][weight])) for u, v in edges
-        )
-    T = G.edge_subgraph(edges)
-    return T
-
-def _mehlhorn_steiner_tree(G, terminal_nodes, weight):
-    paths = nx.multi_source_dijkstra_path(G, terminal_nodes)
-
-    d_1 = {}
-    s = {}
-    for v in G.nodes():
-        s[v] = paths[v][0]
-        d_1[(v, s[v])] = len(paths[v]) - 1
-
-    # G1-G4 names match those from the Mehlhorn 1988 paper.
-    G_1_prime = nx.Graph()
-    for u, v, data in G.edges(data=True):
-        su, sv = s[u], s[v]
-        weight_here = d_1[(u, su)] + data.get(weight, 1) + d_1[(v, sv)]
-        if not G_1_prime.has_edge(su, sv):
-            G_1_prime.add_edge(su, sv, weight=weight_here)
-        else:
-            new_weight = min(weight_here, G_1_prime[su][sv]["weight"])
-            G_1_prime.add_edge(su, sv, weight=new_weight)
-
-    G_2 = nx.minimum_spanning_edges(G_1_prime, data=True)
-
-    G_3 = nx.Graph()
-    for u, v, d in G_2:
-        path = nx.shortest_path(G, u, v, weight)
-        for n1, n2 in pairwise(path):
-            G_3.add_edge(n1, n2)
-
-    G_3_mst = list(nx.minimum_spanning_edges(G_3, data=False))
-    if G.is_multigraph():
-        G_3_mst = (
-            (u, v, min(G[u][v], key=lambda k: G[u][v][k][weight])) for u, v in G_3_mst
-        )
-    G_4 = G.edge_subgraph(G_3_mst).copy()
-    _remove_nonterminal_leaves(G_4, terminal_nodes)
-    return G_4.edges()
-
-def _remove_nonterminal_leaves(G, terminals):
-    terminals_set = set(terminals)
-    for n in list(G.nodes):
-        if n not in terminals_set and G.degree(n) == 1:
-            G.remove_node(n)
-
-# This function connects given vertices with minimum weighted edges
-def connect_cities(list_cities):
-    G2 =steiner_tree(G, list_cities) # find the shortest path connecting all cities in list_cities
-    weight = int(G2.size(weight="weight")) # calculate it's weight
-    
-    return weight,G2
 
 '''To calculate train cost and points of a collection of path, we can select some indexes
-from 0 to 29 (len(TICKETS)=30). Then we're gonna calculate the weight, path and point.
-(not including longest path point since it's single-player)'''
-def calculate_point(indexes, tickets = TICKETS):
-    city_list = [tickets[i][j] for i in indexes for j in range(2)] # add city1 and city2   
-    weight, G2 = connect_cities(city_list)
-    point_ticket = 0
-    point_edge = 0
-    for i in indexes:
-        add = int(tickets[i][2]) # adding ticket points
-        point_ticket += add
+from 0 to 29 (len(TICKETS)=30). Then we're gonna calculate the weight, path and point.'''
 
-    for i,j in G2.edges():
-        try: 
-            edge_weight = EDGES_DICT[(i,j)]
+# calculate all points together
+def calculate_point(routes, tickets):
+    # Build bidirectional weighted graph from both players' taken VERTICES and EDGES
+    G1 = nx.MultiGraph()  # get player1's graph
+    G1.add_nodes_from(VERTICES)  # add vertices
+
+    for (node1, node2), (weight, color) in routes.items():
+        G1.add_edge(node1, node2, weight=int(weight), color=color)  # add edges
+
+    point_ticket = 0
+    for ticket in tickets:
+        city1 = ticket[0]
+        city2 = ticket[1]
+        point = int(ticket[2])
+
+        if nx.has_path(G1, city1, city2):
+            point_ticket += point
+        else:
+            point_ticket -= point
+
+    point_edge = 0
+    for i, j in G1.edges():
+        try:
+            edge_weight = EDGES_DICT[(i, j)]
         except KeyError:
-            edge_weight = EDGES_DICT[(j,i)]
+            edge_weight = EDGES_DICT[(j, i)]
         finally:
             point_edge += POINT_EDGE_DICT[edge_weight]
-            
-    return (point_ticket, point_edge), weight, G2
 
-def test_combinations(index_comb_lst, tickets = TICKETS): 
-    max_point = 0
-    best_weight = 0
-    best_path_graph = []
-    best_idx = []
-    n = len(tickets)
-    
-    while True:
-        (p1, p2), w, G2 = calculate_point(index_comb_lst, tickets)
-        p = p1+p2
-        if p > max_point and w<=45: # update the best path when max_point is exceeded
-                max_point = p
-                best_weight = w # it's actually just the weight that corresponds to p
-                best_path_graph = G2
-                best_idx = index_comb_lst.copy()
+    longest_path_length, longest_path_edges = find_longest_path(G1)
                 
-        if w <= 45:
-            found_bool = False
-            for i in range(1,len(index_comb_lst)+1):
-                if index_comb_lst[-i] < n-i: # if the last term can increase by 1 without index error
-                    max = index_comb_lst[-i] + 1 # max term that can be increased by 1
-                    index_comb_lst.append(max)
-                    index_comb_lst.sort()
-                    found_bool = True # when bool is true, no need to remove a term
-                    break  
+    return point_ticket, point_edge, longest_path_length, longest_path_edges
 
-        else: # change the last term. If max of the array can increase by 1, increase it. 
-    #Otherwise increase the 2nd max, or 3rd etc.
-            add_bool = False
-            for i in range(1,len(index_comb_lst)+1):
-                if index_comb_lst[-i] < n-i: # if the last term can increase by 1 without index error
-                    index_comb_lst[-i] += 1
-                    add_bool = True # when bool is true, no need to remove a term
-                    break   
-                
-            if not add_bool: # return when no term can increase 
-                return max_point, best_weight, best_path_graph, best_idx
+# use DFS to get longest route
+def find_longest_path(graph):
+    longest_path_length = 0
+    longest_path_edges = []
+
+    for start_node in graph.nodes():
+        stack = [(start_node, [], 0, set())]  # (current_node, current_path_edges, current_length, visited_edges)
+
+        # perform DFS using a stack
+        while stack:
+            node, path_edges, length, visited_edges = stack.pop() # pop the last element from the stack
+
+            # iterate over each neighbor of the current node
+            for neighbor in graph.neighbors(node):
+                # iterate over each edge between the current node and the neighbor
+                for key, data in graph[node][neighbor].items():
+                    edge = (node, neighbor, key)    # define the current edge and its reverse
+                    reverse_edge = (neighbor, node, key)
+
+                    #check if the edge and its reverse have not been visited
+                    if edge not in visited_edges and reverse_edge not in visited_edges: 
+                        new_length = length + data['weight'] # calculate the new length
+                        new_path_edges = path_edges + [(node, neighbor, data['weight'])] # create a new path
+                        new_visited_edges = visited_edges | {edge, reverse_edge} # get union of visited edges with new edge
+                        stack.append((neighbor, new_path_edges, new_length, new_visited_edges)) # add visited edges
+
+                        # update longest path if new length is bigger
+                        if new_length > longest_path_length:
+                            longest_path_length = new_length
+                            longest_path_edges = new_path_edges
+
+    return longest_path_length, longest_path_edges
+
+# player_1_tickets = [('Duluth', 'El Paso', '10'), ('Seattle', 'New York', '22'), ('San Francisco', 'Atlanta', '17')]
+# player_1_edges = {EDGES[i][:2]:EDGES[i][2:] for i in range(0,40,3)}
+# calculate_point(player_1_edges, player_1_tickets)
+
+
+
+
+

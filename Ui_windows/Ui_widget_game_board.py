@@ -3,7 +3,7 @@ from functions import EDGES, CITY_LOCATIONS
 import networkx as nx 
 from matplotlib.image import imread 
 import numpy as np 
-from PyQt5.QtWidgets import QVBoxLayout 
+from PyQt5.QtWidgets import QVBoxLayout
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas 
 from matplotlib.figure import Figure 
 import sys 
@@ -18,9 +18,14 @@ class Ui_Form_Game_Board(object):
                 button_colors, 
                 ticket_options_player1, 
                 select_ticket, 
-                draw_ticket_number, 
-                GRAPH, 
-                player1_routes):
+                draw_ticket_number,  
+                player_routes,
+                train_counts):
+
+        self.player1_routes = player_routes[0]
+        self.player2_routes = player_routes[1]
+
+
         Form.setObjectName("Form")
         Form.resize(1330, 875)
         self.layoutWidget = QtWidgets.QWidget(Form)
@@ -37,14 +42,16 @@ class Ui_Form_Game_Board(object):
 
         # add a warning label
         font.setPointSize(30)
-        self.dont_cheat_label = QtWidgets.QLabel(Form)
-        self.dont_cheat_label.setFont(font)
-        self.dont_cheat_label.setGeometry(550, 300, 330, 50)  # set position and size of the label
-        self.dont_cheat_label.hide()  # hide the label initially
+        self.label_warn_user = QtWidgets.QLabel(Form)
+        self.label_warn_user.setFont(font)
+        self.label_warn_user.setGeometry(250, 300, 330, 50)  # set position and size of the label
+        self.label_warn_user.hide()  # hide the label initially
 
         # display player's train cards at bottom
 
-        self.train_count = {i:train_cards.count(i) \
+        self.train_count = {i:train_cards[0].count(i) \
+                       for i in list('blue red green yellow black orange purple white rainbow'.split())}
+        self.train_count2 = {i:train_cards[1].count(i) \
                        for i in list('blue red green yellow black orange purple white rainbow'.split())}
         rainbow_gradient = "qlineargradient(spread:pad, x1:0, y1:0, x2:1, y2:0, stop:0 rgba(255, 0, 0, 255), \
             stop:0.166 rgba(255, 255, 0, 255), stop:0.333 rgba(0, 255, 0, 255), stop:0.5 rgba(0, 255, 255, 255), \
@@ -87,6 +94,7 @@ class Ui_Form_Game_Board(object):
         self.label_mytrains.setFont(font)
         self.label_mytrains.setObjectName("label_mytrains")
         self.horizontalLayout_mycards.addWidget(self.label_mytrains)
+        self.label_mytrains.setText(f"  My Trains: {train_counts[0]}") # number of train cards
         spacerItem2_mycards = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_mycards.addItem(spacerItem2_mycards)
         self.layoutWidget_mycards.setGeometry(QtCore.QRect(300, 640, 800, 60)) # adjust my cards location
@@ -287,6 +295,12 @@ f"background-color: {button_colors_rename[4]}; \n"
         self.text_opponent_trains.setObjectName("text_opponent_trains")
         self.verticalLayout_opponent_info.addWidget(self.text_opponent_trains)
 
+        # opponent info
+        self.label_opponent_info.setText("Opponent info:")
+        self.text_opponent_tickets.setText(f"{len(ticket_cards[1])} TICKETS")
+        self.text_opponent_cards.setText(f"{len(train_cards[1])} CARDS")
+        self.text_opponent_trains.setText(f"{train_counts[1]} TRAINS")
+
 
         # player (my) tickets
         self.verticalLayoutWidget = QtWidgets.QWidget(Form)
@@ -299,7 +313,7 @@ f"background-color: {button_colors_rename[4]}; \n"
         self.verticalLayout_2.setObjectName("verticalLayout_2")
 
         # add destination tickets names
-        ticket_cards_format = [f"<li>{i[0]} - {i[1]} {i[2]}</li>" for i in ticket_cards] 
+        ticket_cards_format = [f"<li>{i[0]} - {i[1]} {i[2]}</li>" for i in ticket_cards[0]] 
         self.ticket_cards_text = f"<ul>{''.join(ticket_cards_format)}</ul>" # get player1 tickets as bullet list text
         self.label_ticket1 = QtWidgets.QLabel(self.verticalLayoutWidget)
         self.label_ticket1.setWordWrap(True)
@@ -311,45 +325,75 @@ f"background-color: {button_colors_rename[4]}; \n"
 
 
         # select destination ticket
-        self.stackedWidget = QtWidgets.QStackedWidget(Form)
-        self.stackedWidget.setGeometry(QtCore.QRect(440, 10, 581, 121))
-        self.stackedWidget.setObjectName("stackedWidget_board")
+        self.stackedwidget_select_ticket = QtWidgets.QStackedWidget(Form)
+        self.stackedwidget_select_ticket.setGeometry(QtCore.QRect(440, 10, 581, 121))
+        self.stackedwidget_select_ticket.setObjectName("stackedWidget_board")
 
         self.state_game = QtWidgets.QWidget()
         self.state_game.setObjectName("state_game")
-        self.stackedWidget.addWidget(self.state_game)
+        self.stackedwidget_select_ticket.addWidget(self.state_game)
 
 
         # set and display ticket options to player1
         self.ticket_options_player1_text = [f"{i[0]}-{i[1]} {i[2]}" for i in ticket_options_player1]
 
+        # set widget and text
         self.state_select_ticket = QtWidgets.QWidget()
         self.state_select_ticket.setObjectName("state_select_ticket")
-        self.textEdit_state_select_ticket = QtWidgets.QTextEdit(self.state_select_ticket)
-        self.textEdit_state_select_ticket.setGeometry(QtCore.QRect(130, 0, 291, 41))
-        self.textEdit_state_select_ticket.setObjectName("textEdit_state_select_ticket")
+        self.label_state_select_ticket = QtWidgets.QLabel(self.state_select_ticket)
+        self.label_state_select_ticket.setGeometry(QtCore.QRect(130, 0, 291, 41))
+        self.label_state_select_ticket.setObjectName("label_state_select_ticket")
+        self.label_state_select_ticket.setStyleSheet('background: white; font: 20px')
+        self.label_state_select_ticket.setAlignment(QtCore.Qt.AlignCenter)
+
+        # set ticket option buttons
+        button1_x, button1_y, button1_w, button1_h = 50, 40, 141, 41
         self.button_ticket_option1 = QtWidgets.QPushButton(self.state_select_ticket)
-        self.button_ticket_option1.setGeometry(QtCore.QRect(50, 40, 141, 41))
+        self.button_ticket_option1.setGeometry(QtCore.QRect(button1_x, button1_y, button1_w, button1_h))
         self.button_ticket_option1.setCheckable(True)
         self.button_ticket_option1.setObjectName("pushButton_ticket_option1")
+        self.label_ticket_option1 = QtWidgets.QLabel(self.state_select_ticket)
+        self.label_ticket_option1.setText("This is a long text.")
+        self.label_ticket_option1.setGeometry(QtCore.QRect(button1_x+5, button1_y, button1_w-5, button1_h))
+        self.label_ticket_option1.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_ticket_option1.setWordWrap(True)
+        self.label_ticket_option1.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents) # button isn't clickable without this
+
+        button2_x, button2_y, button2_w, button2_h = 210, 40, 141, 41
         self.button_ticket_option2 = QtWidgets.QPushButton(self.state_select_ticket)
-        self.button_ticket_option2.setGeometry(QtCore.QRect(210, 40, 141, 41))
+        self.button_ticket_option2.setGeometry(QtCore.QRect(button2_x, button2_y, button2_w, button2_h))
         self.button_ticket_option2.setCheckable(True)
         self.button_ticket_option2.setObjectName("pushButton_ticket_option2")
+        self.label_ticket_option2 = QtWidgets.QLabel(self.state_select_ticket)
+        self.label_ticket_option2.setText("This is a long text.")
+        self.label_ticket_option2.setGeometry(QtCore.QRect(button2_x+5, button2_y, button2_w-5, button2_h))
+        self.label_ticket_option2.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_ticket_option2.setWordWrap(True)
+        self.label_ticket_option2.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents) # button isn't clickable without this
+
+        button3_x, button3_y, button3_w, button3_h = 370, 40, 141, 41
         self.button_ticket_option3 = QtWidgets.QPushButton(self.state_select_ticket)
-        self.button_ticket_option3.setGeometry(QtCore.QRect(370, 40, 141, 41))
+        self.button_ticket_option3.setGeometry(QtCore.QRect(button3_x, button3_y, button3_w, button3_h))
         self.button_ticket_option3.setCheckable(True)
         self.button_ticket_option3.setObjectName("pushButton_ticket_option3")
+        self.label_ticket_option3 = QtWidgets.QLabel(self.state_select_ticket)
+        self.label_ticket_option3.setText("This is a long text")
+        self.label_ticket_option3.setGeometry(QtCore.QRect(button3_x+5, button3_y, button3_w-5, button3_h))
+        self.label_ticket_option3.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_ticket_option3.setWordWrap(True) 
+        self.label_ticket_option3.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents) # button isn't clickable without this
+
+
         self.button_ticket_option_okay = QtWidgets.QPushButton(self.state_select_ticket)
         self.button_ticket_option_okay.setGeometry(QtCore.QRect(240, 90, 75, 23))
         self.button_ticket_option_okay.setObjectName("pushButton_ticket_option_okay")
-        self.stackedWidget.addWidget(self.state_select_ticket)
+        self.stackedwidget_select_ticket.addWidget(self.state_select_ticket)
 
 
         # set claim road stackedwidget. will run when player wants to claim a road
         self.stackedWidget_claim_road = QtWidgets.QStackedWidget(Form)
         self.stackedWidget_claim_road.setGeometry(QtCore.QRect(400, -20, 641, 110))
-        self.stackedWidget_claim_road.setObjectName("stackedWidget")
+        self.stackedWidget_claim_road.setObjectName("stackedWidget_claim_road")
         self.state_claim_road_empty = QtWidgets.QWidget()
         self.state_claim_road_empty.setObjectName("state_claim_road_empty")
         self.label_claim_road_empty = QtWidgets.QLabel(self.state_claim_road_empty)
@@ -407,16 +451,6 @@ f"background-color: {button_colors_rename[4]}; \n"
         self.horizontalLayout_claim_road_question.setObjectName("horizontalLayout_claim_road_question")
         spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_claim_road_question.addItem(spacerItem2)
-        self.pushButton_claim_road_question_okay = QtWidgets.QPushButton(self.verticalLayoutWidget_2)
-        self.pushButton_claim_road_question_okay.setMinimumSize(QtCore.QSize(0, 20))
-        self.pushButton_claim_road_question_okay.setCheckable(True) #test
-        self.pushButton_claim_road_question_okay.setObjectName("pushButton_claim_road_question_okay")
-        self.horizontalLayout_claim_road_question.addWidget(self.pushButton_claim_road_question_okay)
-        self.pushButton_claim_road_question_cancel = QtWidgets.QPushButton(self.verticalLayoutWidget_2)
-        self.pushButton_claim_road_question_cancel.setMinimumSize(QtCore.QSize(0, 20))
-        self.pushButton_claim_road_question_cancel.setCheckable(True) #test
-        self.pushButton_claim_road_question_cancel.setObjectName("pushButton_claim_road_question_cancel")
-        self.horizontalLayout_claim_road_question.addWidget(self.pushButton_claim_road_question_cancel)
         spacerItem3 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.horizontalLayout_claim_road_question.addItem(spacerItem3)
         self.verticalLayout_claim_road_question.addLayout(self.horizontalLayout_claim_road_question)
@@ -429,15 +463,16 @@ f"background-color: {button_colors_rename[4]}; \n"
         self.verticalLayoutWidget_2.raise_()
         self.stackedWidget_claim_road.addWidget(self.state_claim_road_question)
 
+        # state claim road confirm
         self.state_claim_road_confirm = QtWidgets.QWidget()
         self.state_claim_road_confirm.setObjectName("state_claim_road_confirm")
-        self.verticalLayoutWidget = QtWidgets.QWidget(self.state_claim_road_confirm)
-        self.verticalLayoutWidget.setGeometry(QtCore.QRect(30, 10, 601, 91))
-        self.verticalLayoutWidget.setObjectName("verticalLayoutWidget")
-        self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayoutWidget_claim_road_confirm = QtWidgets.QWidget(self.state_claim_road_confirm) # claim road widget
+        self.verticalLayoutWidget_claim_road_confirm.setGeometry(QtCore.QRect(30, 10, 601, 91))
+        self.verticalLayoutWidget_claim_road_confirm.setObjectName("verticalLayoutWidget_claim_road_confirm")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_claim_road_confirm)
         self.verticalLayout.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.label_claim_road_cost = QtWidgets.QLabel(self.verticalLayoutWidget)
+        self.label_claim_road_cost = QtWidgets.QLabel(self.verticalLayoutWidget_claim_road_confirm)
         font = QtGui.QFont()
         font.setPointSize(14)
         self.label_claim_road_cost.setFont(font)
@@ -445,18 +480,36 @@ f"background-color: {button_colors_rename[4]}; \n"
         self.label_claim_road_cost.setContentsMargins(0, 10, 0, 0)
         self.label_claim_road_cost.setObjectName("label_claim_road_cost")
         self.verticalLayout.addWidget(self.label_claim_road_cost)
-        self.buttonBox_claim_road = QtWidgets.QDialogButtonBox(self.verticalLayoutWidget)
-        self.buttonBox_claim_road.setOrientation(QtCore.Qt.Horizontal)
-        self.buttonBox_claim_road.setStandardButtons(QtWidgets.QDialogButtonBox.Cancel|QtWidgets.QDialogButtonBox.Ok)
-        self.buttonBox_claim_road.setCenterButtons(True)
-        self.buttonBox_claim_road.setObjectName("buttonBox")
-        self.verticalLayout.addWidget(self.buttonBox_claim_road)
         self.textEdit_claim_road_background_3 = QtWidgets.QPlainTextEdit(self.state_claim_road_confirm)
         self.textEdit_claim_road_background_3.setGeometry(QtCore.QRect(-120, -40, 871, 191))
         self.textEdit_claim_road_background_3.setObjectName("textEdit_claim_road_background_3")
         self.textEdit_claim_road_background_3.raise_()
-        self.verticalLayoutWidget.raise_()
+        self.verticalLayoutWidget_claim_road_confirm.raise_()
         self.stackedWidget_claim_road.addWidget(self.state_claim_road_confirm)
+
+        # state claim road reject
+        self.state_claim_road_reject = QtWidgets.QWidget()
+        self.state_claim_road_reject.setObjectName("state_claim_road_reject")
+        self.verticalLayoutWidget_claim_road_reject = QtWidgets.QWidget(self.state_claim_road_reject) # claim road widget
+        self.verticalLayoutWidget_claim_road_reject.setGeometry(QtCore.QRect(30, 10, 601, 91))
+        self.verticalLayoutWidget_claim_road_reject.setObjectName("verticalLayoutWidget_claim_road_reject")
+        self.verticalLayout = QtWidgets.QVBoxLayout(self.verticalLayoutWidget_claim_road_reject)
+        self.verticalLayout.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout.setObjectName("verticalLayout")
+        self.label_claim_road_cost_reject = QtWidgets.QLabel(self.verticalLayoutWidget_claim_road_reject)
+        font = QtGui.QFont()
+        font.setPointSize(14)
+        self.label_claim_road_cost_reject.setFont(font)
+        self.label_claim_road_cost_reject.setAlignment(QtCore.Qt.AlignCenter)
+        self.label_claim_road_cost_reject.setContentsMargins(0, 10, 0, 0)
+        self.label_claim_road_cost_reject.setObjectName("label_claim_road_cost_reject")
+        self.verticalLayout.addWidget(self.label_claim_road_cost_reject)
+        self.textEdit_claim_road_background_3 = QtWidgets.QPlainTextEdit(self.state_claim_road_reject)
+        self.textEdit_claim_road_background_3.setGeometry(QtCore.QRect(-120, -40, 871, 191))
+        self.textEdit_claim_road_background_3.setObjectName("textEdit_claim_road_background_3")
+        self.textEdit_claim_road_background_3.raise_()
+        self.verticalLayoutWidget_claim_road_reject.raise_()
+        self.stackedWidget_claim_road.addWidget(self.state_claim_road_reject)
 
         self.layoutWidget.raise_()
         self.button_draw_destination.raise_()
@@ -464,28 +517,28 @@ f"background-color: {button_colors_rename[4]}; \n"
         self.label_opponent_info.raise_()
         self.text_opponent_tickets.raise_()
         self.text_opponent_cards.raise_()
-        self.verticalLayoutWidget.raise_()
-        self.stackedWidget.raise_()
+        self.verticalLayoutWidget_claim_road_confirm.raise_()
+        # self.verticalLayoutWidget_claim_road_reject.raise_()
+        self.stackedwidget_select_ticket.raise_()
         self.verticalLayoutWidget_2.raise_()
         self.layoutWidget_mycards.raise_()
-     
+
 
         self.retranslateUi(Form)
-        self.stackedWidget.setCurrentIndex(1)
+        self.stackedwidget_select_ticket.setCurrentIndex(1)
         self.pushButton_mytickets.toggled['bool'].connect(self.label_ticket1.setHidden) # type: ignore
         QtCore.QMetaObject.connectSlotsByName(Form)
 
         # display select_ticket state or game state depending on the player move
         if select_ticket is True:
-            self.stackedWidget.setCurrentWidget(self.state_select_ticket)
+            self.stackedwidget_select_ticket.setCurrentWidget(self.state_select_ticket)
         else:
-            self.stackedWidget.setCurrentWidget(self.state_game)
+            self.stackedwidget_select_ticket.setCurrentWidget(self.state_game)
 
         # display empty claim road stackedwidget
         self.stackedWidget_claim_road.setCurrentWidget(self.state_claim_road_empty)
         
-        # set player routes
-        self.player1_routes = player1_routes
+        
         # Add the MplCanvas widget to the layout
         self.fig = Figure(figsize=(12, 6))
         self.ax = self.fig.add_subplot(111)
@@ -529,13 +582,14 @@ f"background-color: {button_colors_rename[4]}; \n"
         button.setFont(font)
         button.setStyleSheet(f"background-color: {color}; color: {text_color}")
         button.setObjectName(name)
-        button.setCheckable(True)
+        # button.setFocusPolicy(Qt.NoFocus) #test
         self.horizontalLayout_mycards.addWidget(button)
         return button
 
     def get_plot(self):
         player_1_edges = self.player1_routes
-        player_2_edges = [EDGES[i] for i in range(0,10)]
+        # player_2_edges = {(EDGES[i][0],EDGES[i][1]):(EDGES[i][2],EDGES[i][3]) for i in range(0,10)} #test
+        player_2_edges = self.player2_routes
 
         # Build graph to plot the current game situation
         taken_vertices = {edge[j] for edge in player_1_edges for j in range(2)}
@@ -548,32 +602,33 @@ f"background-color: {button_colors_rename[4]}; \n"
         G2 = nx.MultiGraph()  # just for player 2 edges
         G2.add_nodes_from(taken_vertices)  # add vertices
 
-        for edge in player_1_edges:
-            G1.add_edge(edge[0], edge[1], weight=int(edge[2]), color=edge[3])  # add edges
+        for (node1, node2), (weight, color) in player_1_edges.items():
+            G1.add_edge(node1, node2, weight=int(weight), color=color)  # add edges
 
-        for edge in player_2_edges:
-            G2.add_edge(edge[0], edge[1], weight=int(edge[2]), color=edge[3])  # add edges
+        for (node1, node2), (weight, color) in player_2_edges.items():
+            G2.add_edge(node1, node2, weight=int(weight), color=color)  # add edges
         
         self.plot(G1, 'player_1')
         self.plot(G2, 'player_2')
 
     def plot(self, G, player):
         # Load and plot the background image
-        self.canvas.ax.imshow(self.img, extent=[0, self.img.shape[1], 0, self.img.shape[0]], aspect='auto')
-        PINK = '#fd6cee'
+        self.canvas.ax.imshow(self.img, extent=[0, self.img.shape[1], 0, self.img.shape[0]], aspect='auto') # show image
+        self.canvas.ax.axis('off')  # Hide x and y axis
+
         player_color = 'blue' if player == 'player_1' else 'red'
 
         pos = CITY_LOCATIONS
-        y, x, z = np.shape(self.img)
+        y, x, z = np.shape(self.img) # get image size
 
         POS_REFLECTED = {k: (v[0] * x, v[1] * y) for k, v in pos.items()}
-        nx.draw_networkx_nodes(G, POS_REFLECTED, ax=self.canvas.ax, node_color=PINK, node_size=50)
+        # nx.draw_networkx_nodes(G, POS_REFLECTED, ax=self.canvas.ax, node_color=PINK, node_size=50)
         # nx.draw_networkx_edges(G, POS_REFLECTED, width=6, ax=self.canvas.ax, edge_color=player_color, alpha=0.8)
 
         # edge_labels = nx.get_edge_attributes(G, "color")
         # nx.draw_networkx_edge_labels(G, POS_REFLECTED, edge_labels, ax=self.canvas.ax, rotate=False, bbox=dict(alpha=0), horizontalalignment='right')
         
-        # optional for fancy arrows (alternative plot is all 3 lines above, unmark them)
+        # optional for fancy arrows (alternative plot is all 4 lines above, unmark them)
         with open('data/road_curvature.txt') as f:
                 next(f) # skipping header
                 # get data as (node1, node2): curvature
@@ -594,8 +649,7 @@ f"background-color: {button_colors_rename[4]}; \n"
                         node1 = POS_REFLECTED[v]
                         node2 = POS_REFLECTED[u]
 
-                # optional plot 2 curvy paths with concavity changing
-
+                # optional plot for 2 curvy paths with concavity changing
                 if ((u,v) == ("Chicago","Toronto") or (v,u) == ("Chicago","Toronto")):
                         node1 = POS_REFLECTED["Chicago"]
                         node2 = POS_REFLECTED["Toronto"]
@@ -643,49 +697,39 @@ f"background-color: {button_colors_rename[4]}; \n"
         # current player info
         self.current_player.setText(_translate("Form", f"{self.player}'s turn"))
 
+
         #labels of train cards
-        self.label_mycards.setText(_translate("Form", "My Cards:   "))
-        self.label_mytrains.setText(_translate("Form", "  My Trains: 43"))
-        self.button_train_red.setText(_translate("Form", str(self.train_count['red'])))
-        self.button_train_green.setText(_translate("Form", str(self.train_count['green'])))
-        self.button_train_blue.setText(_translate("Form", str(self.train_count['blue'])))
-        self.button_train_orange.setText(_translate("Form", str(self.train_count['orange'])))
-        self.button_train_yellow.setText(_translate("Form", str(self.train_count['yellow'])))
-        self.button_train_black.setText(_translate("Form", str(self.train_count['black'])))
-        self.button_train_white.setText(_translate("Form", str(self.train_count['white'])))
-        self.button_train_purple.setText(_translate("Form", str(self.train_count['purple'])))
-        self.button_train_rainbow.setText(_translate("Form", str(self.train_count['rainbow'])))
+        self.label_mycards.setText(_translate("Form", "My Cards:   \nOpponent's:")) # test. remove 2nd parts from this line and below lines
+        self.button_train_red.setText(_translate("Form", str(self.train_count['red'])+f"\n{self.train_count2['red']}"))
+        self.button_train_green.setText(_translate("Form", str(self.train_count['green'])+f"\n{self.train_count2['green']}"))
+        self.button_train_blue.setText(_translate("Form", str(self.train_count['blue'])+f"\n{self.train_count2['blue']}"))
+        self.button_train_orange.setText(_translate("Form", str(self.train_count['orange'])+f"\n{self.train_count2['orange']}"))
+        self.button_train_yellow.setText(_translate("Form", str(self.train_count['yellow'])+f"\n{self.train_count2['yellow']}"))
+        self.button_train_black.setText(_translate("Form", str(self.train_count['black'])+f"\n{self.train_count2['black']}"))
+        self.button_train_white.setText(_translate("Form", str(self.train_count['white'])+f"\n{self.train_count2['white']}"))
+        self.button_train_purple.setText(_translate("Form", str(self.train_count['purple'])+f"\n{self.train_count2['purple']}"))
+        self.button_train_rainbow.setText(_translate("Form", str(self.train_count['rainbow'])+f"\n{self.train_count2['rainbow']}"))
 
-
+        # draw button
         self.button_draw_train.setText(_translate("Form", f"Draw Card ({self.draw_ticket_number})"))
         self.button_draw_destination.setText(_translate("Form", "Draw Tickets"))
         self.pushButton_mytickets.setText(_translate("Form", "My Tickets (show/hide)"))
         
-        # opponent info
-        self.label_opponent_info.setText(_translate("Form", "Opponent info:"))
-        self.text_opponent_tickets.setText(_translate("Form", "5 TICKETS"))
-        self.text_opponent_cards.setText(_translate("Form", "4 CARDS"))
-        self.text_opponent_trains.setText(_translate("Form", "43 TRAINS"))
 
+        # player1 tickets
         self.label_ticket1.setText(_translate("Form", self.ticket_cards_text))
 
         # write names of ticket options
-        self.button_ticket_option1.setText(_translate("Form", self.ticket_options_player1_text[0]))
-        self.textEdit_state_select_ticket.setHtml(_translate("Form", "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">\n"
-"<html><head><meta name=\"qrichtext\" content=\"1\" /><style type=\"text/css\">\n"
-"p, li { white-space: pre-wrap; }\n"
-"</style></head><body style=\" font-family:\'MS Shell Dlg 2\'; font-size:8.25pt; font-weight:400; font-style:normal;\">\n"
-"<p style=\" margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;\"><span style=\" font-size:16pt;\">SELECT AT LEAST 2 TICKETS</span></p></body></html>"))
-        self.button_ticket_option2.setText(_translate("Form", self.ticket_options_player1_text[1]))
-        self.button_ticket_option3.setText(_translate("Form", self.ticket_options_player1_text[2]))
+        self.label_state_select_ticket.setText("SELECT AT LEAST 2 TICKETS")
+        self.label_ticket_option1.setText(_translate("Form", self.ticket_options_player1_text[0]))
+        self.label_ticket_option2.setText(_translate("Form", self.ticket_options_player1_text[1])) 
+        self.label_ticket_option3.setText(_translate("Form", self.ticket_options_player1_text[2]))
         self.button_ticket_option_okay.setText(_translate("Form", "OK"))
 
         # write names of claim road labels/buttons
         self.label_claim_road_select_color.setText(_translate("Form", " SELECT COLOR OF THE PATH YOU WANT"))
         self.textEdit_claim_road_question_select_cities.setText(_translate("Form", "SELECTING DENVER-CALGARY"))
         self.label_claim_road_question_cost.setText(_translate("Form", "IT WILL COST YOU AN ARM AND LEG"))
-        self.pushButton_claim_road_question_okay.setText(_translate("Form", "OK"))
-        self.pushButton_claim_road_question_cancel.setText(_translate("Form", "CANCEL"))
         self.label_claim_road_cost.setText(_translate("Form", "IT\'LL COST YOU 3 CARDS (2 Green + 1 Rainbow)"))
 
 class MplCanvas(FigureCanvas):
