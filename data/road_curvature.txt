@@ -1,0 +1,101 @@
+City A,City B, curvature
+Vancouver,Calgary,0
+Vancouver,Seattle,0
+Vancouver,Seattle,0
+Seattle,Calgary,0.4
+Seattle,Helena,0
+Seattle,Portland,0
+Seattle,Portland,0
+Portland,Salt Lake City,-0.3
+Portland,San Francisco,0.25
+Portland,San Francisco,0.25
+San Francisco,Salt Lake City,0
+San Francisco,Salt Lake City,0
+San Francisco,Los Angeles,0.2
+San Francisco,Los Angeles,0.2
+Los Angeles,Las Vegas,-0.4
+Los Angeles,Phoenix,-0.2
+Los Angeles,El Paso,0.2
+Calgary,Winnipeg,-0.25
+Calgary,Helena,-0.05
+Helena,Winnipeg,0
+Helena,Salt Lake City,0
+Helena,Denver,0
+Helena,Duluth,0
+Helena,Omaha,0
+Salt Lake City,Denver,0
+Salt Lake City,Denver,0
+Las Vegas,Salt Lake City,0.3
+Phoenix,Denver,-0.3
+Phoenix,Santa Fe,0
+Phoenix,El Paso,0
+Winnipeg,Sault St. Marie,0
+Winnipeg,Duluth,0
+Duluth,Sault St. Marie,0
+Duluth,Toronto,0
+Duluth,Chicago,0.1
+Duluth,Omaha,0
+Duluth,Omaha,0
+Omaha,Chicago,-0.3
+Omaha,Kansas City,0
+Omaha,Kansas City,0
+Kansas City,Saint Louis,0
+Kansas City,Saint Louis,0
+Kansas City,Oklahoma City,0
+Kansas City,Oklahoma City,0
+Oklahoma City,Little Rock,0
+Oklahoma City,Dallas,0
+Oklahoma City,Dallas,0
+Dallas,Little Rock,0
+Dallas,Houston,0
+Dallas,Houston,0
+Houston,New Orleans,0
+El Paso,Houston,0.25
+El Paso,Dallas,0
+El Paso,Oklahoma City,0.2
+El Paso,Santa Fe,0
+Santa Fe,Oklahoma City,0
+Oklahoma City,Denver,-0.25
+Santa Fe,Denver,0
+Denver,Kansas City,0.1
+Denver,Kansas City,0.1
+Denver,Omaha,-0.2
+New Orleans,Miami,-0.3
+New Orleans,Atlanta,-0.2
+New Orleans,Atlanta,-0.2
+New Orleans,Little Rock,0
+Little Rock,Nashville,0.2
+Little Rock,Saint Louis,0
+Saint Louis,Nashville,0.1
+Saint Louis,Pittsburgh,0
+Saint Louis,Chicago,0
+Saint Louis,Chicago,0
+Chicago,Pittsburgh,-0.2
+Chicago,Pittsburgh,-0.2
+Chicago,Toronto,-0.2
+Sault St. Marie,Montreal,-0.2
+Toronto,Montreal,-0.3
+Sault St. Marie,Toronto,0
+Toronto,Pittsburgh,0
+Pittsburgh,New York,0
+Pittsburgh,New York,0
+Pittsburgh,Washington,0
+Pittsburgh,Raleigh,0
+Nashville,Raleigh,-0.3
+Nashville,Atlanta,0
+Nashville,Pittsburgh,-0.2
+Atlanta,Miami,0
+Atlanta,Charleston,0.1
+Atlanta,Raleigh,0
+Atlanta,Raleigh,0
+Charleston,Miami,0.1
+Raleigh,Charleston,-0.7
+Raleigh,Washington,0
+Raleigh,Washington,0
+Washington,New York,0
+Washington,New York,0
+New York,Boston,0
+New York,Boston,0
+New York,Montreal,0
+Boston,Montreal,0
+Boston,Montreal,0
